@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CITADEL - Central de Macros</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            color: white;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        header {
+            border-bottom: 1px solid #222;
+            padding: 25px;
+            background: #050505;
+        }
+
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .piramide {
+            width: 0;
+            height: 0;
+            border-left: 28px solid transparent;
+            border-right: 28px solid transparent;
+            border-bottom: 50px solid #2563eb;
+            filter: drop-shadow(0 0 12px rgba(37, 99, 235, 0.8));
+        }
+
+        .titulo-sistema h1 {
+            letter-spacing: 5px;
+            font-size: 30px;
+        }
+
+        .titulo-sistema p {
+            color: #999;
+            margin-top: 4px;
+        }
+
+        main {
+            width: 95%;
+            max-width: 1100px;
+            margin: 25px auto;
+        }
+
+        .card {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            margin-bottom: 15px;
+            color: #60a5fa;
+        }
+
+        label {
+            display: block;
+            margin-top: 12px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            background: #050505;
+            border: 1px solid #333;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        input:focus,
+        textarea:focus {
+            border-color: #2563eb;
+            outline: none;
+        }
+
+        textarea {
+            min-height: 140px;
+            resize: vertical;
+        }
+
+        button {
+            border: none;
+            border-radius: 8px;
+            padding: 10px 14px;
+            cursor: pointer;
+            color: white;
+        }
+
+        .btn-salvar {
+            background: #2563eb;
+            margin-top: 15px;
+        }
+
+        .btn-salvar:hover {
+            background: #1d4ed8;
+        }
+
+        .macro {
+            background: #111;
+            border: 1px solid #222;
+            border-left: 4px solid #2563eb;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .macro h3 {
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 5px 10px;
+            background: #0a0a0a;
+            border: 1px solid #2563eb;
+            color: #60a5fa;
+            border-radius: 30px;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+
+        .texto {
+            white-space: pre-wrap;
+            background: #050505;
+            border: 1px solid #222;
+            padding: 12px;
+            border-radius: 8px;
+            color: #ddd;
+            margin-bottom: 12px;
+        }
+
+        .acoes {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .copiar {
+            background: #2563eb;
+        }
+
+        .editar {
+            background: #555;
+        }
+
+        .excluir {
+            background: #b91c1c;
+        }
+
+        .contador {
+            text-align: center;
+            color: #888;
+            margin-bottom: 15px;
+        }
+
+        .vazio {
+            text-align: center;
+            color: #777;
+            padding: 25px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="logo-container">
+            <div class="piramide"></div>
+
+            <div class="titulo-sistema">
+                <h1>CITADEL - CMA </h1>
+                <p>Central de Macros de Atendimento</p>
+            </div>
+        </div>
+    </header>
+
+    <main>
+
+        <div class="card">
+            <h2>Nova Macro</h2>
+
+            <label>Nome da Macro</label>
+            <input type="text" id="titulo">
+
+            <label>Categoria</label>
+            <input type="text" id="categoria"
+                placeholder="Ex: Cobrança, Saudação, Encerramento">
+
+            <label>Mensagem</label>
+            <textarea id="mensagem"></textarea>
+
+            <button class="btn-salvar" onclick="salvarMacro()">
+                Salvar Macro
+            </button>
+        </div>
+
+        <div class="card">
+            <h2>Pesquisar</h2>
+
+            <input
+                type="text"
+                id="busca"
+                placeholder="Pesquisar por nome, categoria ou conteúdo..."
+                onkeyup="renderizarMacros()">
+        </div>
+
+        <div class="contador" id="contador"></div>
+
+        <div id="listaMacros"></div>
+
+    </main>
+
+    <script>
+
+        let macros =
+            JSON.parse(localStorage.getItem("citadelMacros")) || [];
+
+        let editando = null;
+
+        function salvarLocal() {
+            localStorage.setItem(
+                "citadelMacros",
+                JSON.stringify(macros)
+            );
+        }
+
+        function limparCampos() {
+            document.getElementById("titulo").value = "";
+            document.getElementById("categoria").value = "";
+            document.getElementById("mensagem").value = "";
+        }
+
+        function salvarMacro() {
+
+            const titulo =
+                document.getElementById("titulo").value.trim();
+
+            const categoria =
+                document.getElementById("categoria").value.trim();
+
+            const mensagem =
+                document.getElementById("mensagem").value.trim();
+
+            if (!titulo || !mensagem) {
+                alert("Preencha o nome e a mensagem.");
+                return;
+            }
+
+            if (editando === null) {
+
+                macros.push({
+                    id: Date.now(),
+                    titulo,
+                    categoria:
+                        categoria || "Sem categoria",
+                    mensagem
+                });
+
+            } else {
+
+                macros[editando].titulo = titulo;
+                macros[editando].categoria =
+                    categoria || "Sem categoria";
+                macros[editando].mensagem =
+                    mensagem;
+
+                editando = null;
+
+                document.querySelector(".btn-salvar")
+                    .textContent = "Salvar Macro";
+            }
+
+            salvarLocal();
+            limparCampos();
+            renderizarMacros();
+        }
+
+        function excluirMacro(indice) {
+
+            if (!confirm("Excluir esta macro?")) {
+                return;
+            }
+
+            macros.splice(indice, 1);
+
+            salvarLocal();
+            renderizarMacros();
+        }
+
+        function editarMacro(indice) {
+
+            const macro = macros[indice];
+
+            document.getElementById("titulo")
+                .value = macro.titulo;
+
+            document.getElementById("categoria")
+                .value = macro.categoria;
+
+            document.getElementById("mensagem")
+                .value = macro.mensagem;
+
+            editando = indice;
+
+            document.querySelector(".btn-salvar")
+                .textContent = "Atualizar Macro";
+
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+        }
+
+        function copiarMacro(texto, botao) {
+
+            navigator.clipboard.writeText(texto);
+
+            const antigo = botao.innerHTML;
+
+            botao.innerHTML = "Copiado ✓";
+
+            setTimeout(() => {
+                botao.innerHTML = antigo;
+            }, 1500);
+        }
+
+        function renderizarMacros() {
+
+            const busca =
+                document.getElementById("busca")
+                .value
+                .toLowerCase();
+
+            const lista =
+                document.getElementById("listaMacros");
+
+            lista.innerHTML = "";
+
+            const filtradas = macros.filter(m =>
+                m.titulo.toLowerCase().includes(busca) ||
+                m.categoria.toLowerCase().includes(busca) ||
+                m.mensagem.toLowerCase().includes(busca)
+            );
+
+            document.getElementById("contador")
+                .innerHTML =
+                "Total de macros: " + filtradas.length;
+
+            if (filtradas.length === 0) {
+
+                lista.innerHTML =
+                    '<div class="vazio">Nenhuma macro encontrada.</div>';
+
+                return;
+            }
+
+            filtradas.forEach(macro => {
+
+                const indiceOriginal =
+                    macros.findIndex(
+                        item => item.id === macro.id
+                    );
+
+                lista.innerHTML += `
+                    <div class="macro">
+
+                        <h3>${macro.titulo}</h3>
+
+                        <div class="tag">
+                            ${macro.categoria}
+                        </div>
+
+                        <div class="texto">
+                            ${macro.mensagem}
+                        </div>
+
+                        <div class="acoes">
+
+                            <button
+                                class="copiar"
+                                onclick="copiarMacro(
+                                \`${macro.mensagem.replace(/`/g, "\\`")}\`,
+                                this)">
+                                Copiar
+                            </button>
+
+                            <button
+                                class="editar"
+                                onclick="editarMacro(${indiceOriginal})">
+                                Editar
+                            </button>
+
+                            <button
+                                class="excluir"
+                                onclick="excluirMacro(${indiceOriginal})">
+                                Excluir
+                            </button>
+
+                        </div>
+
+                    </div>
+                `;
+            });
+        }
+
+        renderizarMacros();
+
+    </script>
+
+<footer style="
+    text-align:center;
+    padding:15px;
+    color:#888;
+    font-size:12px;
+    border-top:1px solid #333;
+    margin-top:20px;
+">
+    "Tecnologia a serviço das pessoas" ~ S. Carlo Acutis 
+	<span 
+	style="color:#1E90FF;">💙
+	</span>
+</footer>
+
+</body>
+
+</html>
