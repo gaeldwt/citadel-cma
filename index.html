@@ -476,36 +476,38 @@ function importarMacros(event) {
 
     leitor.onload = function(e) {
 
-        localStorage.setItem(
-            "citadelMacros",
-            e.target.result
-        );
+        try {
 
-        alert("Macros importadas com sucesso!");
+            const macrosImportadas =
+                JSON.parse(e.target.result);
 
-        location.reload();
+            localStorage.setItem(
+                "citadelMacros",
+                JSON.stringify(macrosImportadas)
+            );
+
+            macros = macrosImportadas;
+
+            renderizarMacros();
+
+            alert(
+                macrosImportadas.length +
+                " macros importadas com sucesso!"
+            );
+
+        } catch (erro) {
+
+            alert(
+                "Arquivo JSON inválido."
+            );
+
+            console.error(erro);
+        }
     };
 
     leitor.readAsText(arquivo);
 }
 
-function importarMacros(event) {
-    const arquivo = event.target.files[0];
-
-    if (!arquivo) return;
-
-    const leitor = new FileReader();
-
-    leitor.onload = function(e) {
-        localStorage.setItem("macros", e.target.result);
-
-        alert("Macros importadas com sucesso!");
-
-        location.reload();
-    };
-
-    leitor.readAsText(arquivo);
-}
     </script>
 
 <footer style="
