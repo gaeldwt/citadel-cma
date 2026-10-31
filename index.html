@@ -226,6 +226,24 @@
         </div>
 
         <div class="contador" id="contador"></div>
+		<div style="text-align:center; margin-bottom:20px;">
+
+    <button class="copiar" onclick="exportarMacros()">
+        📥 Exportar Macros
+    </button>
+
+    <button class="editar"
+        onclick="document.getElementById('importarArquivo').click()">
+        📤 Importar Macros
+    </button>
+
+    <input
+        type="file"
+        id="importarArquivo"
+        accept=".json"
+        style="display:none"
+        onchange="importarMacros(event)">
+</div>
 
         <div id="listaMacros"></div>
 
@@ -404,21 +422,6 @@
                                 this)">
                                 Copiar
                             </button>
-							<button onclick="exportarMacros()">
-    📥 Exportar Macros
-</button>
-
-<button onclick="document.getElementById('importarArquivo').click()">
-    📤 Importar Macros
-</button>
-
-<input
-    type="file"
-    id="importarArquivo"
-    accept=".json"
-    style="display:none"
-    onchange="importarMacros(event)"
->
 
                             <button
                                 class="editar"
@@ -441,22 +444,49 @@
 
         renderizarMacros();
 function exportarMacros() {
-    const macros = localStorage.getItem("macros");
 
-    if (!macros) {
+    const dados =
+        localStorage.getItem("citadelMacros");
+
+    if (!dados) {
         alert("Nenhuma macro encontrada.");
         return;
     }
 
-    const blob = new Blob([macros], {
-        type: "application/json"
-    });
+    const blob = new Blob(
+        [dados],
+        { type: "application/json" }
+    );
 
     const link = document.createElement("a");
 
     link.href = URL.createObjectURL(blob);
-    link.download = "macros.json";
+    link.download = "citadel-macros.json";
+
     link.click();
+}
+
+function importarMacros(event) {
+
+    const arquivo = event.target.files[0];
+
+    if (!arquivo) return;
+
+    const leitor = new FileReader();
+
+    leitor.onload = function(e) {
+
+        localStorage.setItem(
+            "citadelMacros",
+            e.target.result
+        );
+
+        alert("Macros importadas com sucesso!");
+
+        location.reload();
+    };
+
+    leitor.readAsText(arquivo);
 }
 
 function importarMacros(event) {
